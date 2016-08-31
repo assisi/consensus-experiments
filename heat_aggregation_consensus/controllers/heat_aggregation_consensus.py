@@ -40,20 +40,21 @@ def update(casu_id, zeta, A, numbees, dt):
 
     return zeta
 
-def compute_setpoint(casu_id, zeta, nbg, x):
+def compute_setpoint(casu_id, zeta, A, x):
     """
     Compute temperature sensor setpoints
     from zeta matrix.
     """
     i = casu_id - 1
-    zeta_i_max = max(zeta[i])
+    zeta_i_max = max(zeta[-2][i])   #zeta in step k
     i_leader = 0
     x_nbg_i_max = 0
-    for j in range (9):
-        if (i==j) and (zeta[i][j]==zeta_i_max):
+    for j in range (n):
+        #CASUi is a leader if its zeta is max
+        if (i==j) and (zeta[-2][i][j]==zeta_i_max):
             setpoint = 36
             i_leader = 1
-        elif (i_leader == 0) and (nbg[j] == 1) and (x_nbg_i_max < x[j]):
+        elif (i_leader == 0) and (A[i][j] == 1) and (x_nbg_i_max < x[j]):
             x_nbg_i_max = x[j]            
             setpoint = x_nbg_i_max - 4
 
@@ -71,7 +72,7 @@ if __name__ == '__main__':
     """ Number of CASUs in the arena"""
     n = 9
     """ Discretization time in sec """
-    Td = .1
+    Td = 0.1
     """ Experiment time in sec """
     Texp = 100
     """ Initial temperature """
@@ -96,7 +97,7 @@ if __name__ == '__main__':
     nbg = [0, 1, 0, 1, 0, 0, 0, 0, 0]
 
     """ Test stuff here """
-    readings = [6,3,0,0,0,0,0,0,0]
+    readings = [0,3,0,0,0,0,0,5,0]
     numbees = estimate_numbees(readings)
 
     """ Adjacency matrix - used for debugging """  
@@ -128,7 +129,7 @@ if __name__ == '__main__':
     """ Main loop """
     t = 0
     while t<Texp:
-        zeta.append([[0 for x in row] for row in zeta[-1]])        
+        zeta.append([[0 for a in row] for row in zeta[-1]])        
         for index in range (n):    #for loop is used for debugging 
             """ Read zeta from neighbours and copy to zeta[ngb_id-1] """
             #zeta[i] = nbg_data[i]
@@ -137,14 +138,13 @@ if __name__ == '__main__':
             casu_id = index+1
             """ Update zeta """
             zeta = update(casu_id, zeta, A, numbees, Td)
-        
-            
+             
             """ Read temperature from neighbours - x(index) = [temp1, ..., temp9] """
             #x = read_nbg_temp
-            #uref = compute_setpoint(casu_id, zeta, nbg, x)
+            uref = compute_setpoint(casu_id, zeta, A, x)
 
             """ Reference filter """
-            #x[index] += 0.1*Td*(uref - x[index])
+            x[index] += 0.1*Td*(uref - x[index])
 
         t += Td     
 
@@ -154,8 +154,8 @@ if __name__ == '__main__':
         row_formated = [ '%.3f' % elem for elem in row ]
         print (row_formated)
     
-    #x_formated = [ '%.2f' % elem for elem in x ]
-    #print('Temperature=')
-    #print(x_formated)
+    x_formated = [ '%.2f' % elem for elem in x ]
+    print('Temperature=')
+    print(x_formated)
 
 
