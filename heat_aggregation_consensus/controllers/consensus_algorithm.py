@@ -10,13 +10,14 @@ class ConsensusAlgorithm:
         self.casu_id = casu_id
         self.zeta = zeta
         self.A = A
+        self.n = len(A[casu_id-1]) # Total number of CASUs; should actually be obsolete
         self.t_ref = [0 for x in A[0]]
 
     def step(self, numbees, dt):
         """ One step of the algorithm """
         
         # Create zeta for next step
-        self.zeta.append([[0 for x in row] for row in zeta[-1]])        
+        self.zeta.append([[0 for x in row] for row in self.zeta[-1]])        
         self.update_zeta(numbees, dt)
         self.update_setpoint(dt)
 
@@ -27,11 +28,11 @@ class ConsensusAlgorithm:
         """
         i = self.casu_id - 1
         
-        for j in range (n):
+        for j in range (self.n):
             
             dzeta1 = 0
             dzeta2 = 0
-            for k in range (n):
+            for k in range (self.n):
                 dzeta1 += self.A[i][k]*self.zeta[-2][i][k]*(self.zeta[-2][k][j]-self.zeta[-2][i][j])
 
             """ Include IR detection"""
@@ -55,12 +56,12 @@ class ConsensusAlgorithm:
         zeta_i_max = max(self.zeta[-2][i])   #zeta in step k
         i_leader = 0
         t_nbg_i_max = 0
-        for j in range (n):
+        for j in range (self.n):
             #CASUi is a leader if its zeta is max
             if (i==j) and (self.zeta[-2][i][j]==zeta_i_max):
                 t_ref_new = 36
                 i_leader = 1
-            elif (i_leader == 0) and (A[i][j] == 1) and (t_nbg_i_max < self.t_ref[j]):
+            elif (i_leader == 0) and (self.A[i][j] == 1) and (t_nbg_i_max < self.t_ref[j]):
                 t_nbg_i_max = self.t_ref[j]            
                 t_ref_new = t_nbg_i_max - 4
     
@@ -68,7 +69,8 @@ class ConsensusAlgorithm:
         t_ref_new = sorted([26,t_ref_new,38])[1]
 
         """ Reference filter """
-        self.t_ref[i] += 0.1*dt*(t_ref_new - self.t_ref[i])
+        self.t_ref[i] = t_ref_new
+        #self.t_ref[i] += 0.1*dt*(t_ref_new - self.t_ref[i])
 
     def print_setpoints(self):
         print(['%.2f' % t for t in self.t_ref])

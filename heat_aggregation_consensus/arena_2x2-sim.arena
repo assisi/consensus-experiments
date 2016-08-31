@@ -1,0 +1,38 @@
+# Configuration file describing a 2x2 arena
+
+# the position of the CASUs in real and GU is identical
+
+# Layer names can be assigned arbitrarily, 
+# as long as they consist only of letters, dashes and underscores
+
+# A sim- prefix in layer names defines layers of objects 
+# that will be spawned in the simulator when running sim.py 
+# on this file
+
+beearena :
+    # Casu names have to start with casu- in order for
+    # automatic spawning to work; they are also only
+    # allowed to contain letters, dashes and underscores
+    casu-001 :
+        pose : {x : -10, y : 10, yaw : -1.57}
+        sub_addr : tcp://localhost:5555
+        pub_addr : tcp://localhost:5556
+        msg_addr : tcp://localhost:10101
+
+    casu-002 :
+        pose : {x : 10, y : 10, yaw : -1.57}
+        sub_addr : tcp://localhost:5555
+        pub_addr : tcp://localhost:5556
+        msg_addr : tcp://localhost:10102
+
+    casu-003 :
+        pose : {x : -10, y : -10, yaw : -1.57}
+        sub_addr : tcp://localhost:5555
+        pub_addr : tcp://localhost:5556
+        msg_addr : tcp://localhost:10103
+
+    casu-004 :
+        pose : {x : 10, y : -10, yaw : -1.57}
+        sub_addr : tcp://localhost:5555
+        pub_addr : tcp://localhost:5556
+        msg_addr : tcp://localhost:10104
