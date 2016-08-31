@@ -11,26 +11,32 @@ def estimate_numbees(readings):
 
     return numbees
 
-def update(casu_id, zeta, nbg, numbees, Td):
+def update(casu_id, zeta, A, numbees, dt):
     """
     Update the zeta matrix, based on neighbors' data
     and bee density estimate.
     """
     i = casu_id - 1
-    for j in range (9):
+    
+    for j in range (n):
+        
         dzeta1 = 0
         dzeta2 = 0
-        for k in range (9):
-            dzeta1 += nbg[k]*zeta[i][k]*(zeta[k][j]-zeta[i][j])
+        for k in range (n):
+            dzeta1 += A[i][k]*zeta[-2][i][k]*(zeta[-2][k][j]-zeta[-2][i][j])
             #print("nbg(%d)=%d" %(k, nbg[k]))
             #print("dzeta1(%d, %d)=%f" %(j, k, dzeta1))
+            #print('dzeta1={0}'.format(dzeta1))
+            #import ipdb; ipdb.set_trace()
         
         """ Include IR detection"""
         if i == j:                
-            dzeta2 = numbees/6 - zeta[i][i]
+            dzeta2 = numbees/6.0 - zeta[-2][i][i]
+            #print('dzeta2={0}'.format(dzeta2))
             #print("dzeta2(%d)=%f" %(i, dzeta2))           
-         
-        zeta[i][j] = zeta[i][j] + Td*(dzeta1 + dzeta2)
+        
+        
+        zeta[-1][i][j] = zeta[-2][i][j] + dt*(dzeta1 + dzeta2)
 
     return zeta
 
@@ -65,7 +71,7 @@ if __name__ == '__main__':
     """ Number of CASUs in the arena"""
     n = 9
     """ Discretization time in sec """
-    Td = 0.1
+    Td = .1
     """ Experiment time in sec """
     Texp = 100
     """ Initial temperature """
@@ -74,7 +80,7 @@ if __name__ == '__main__':
     #zeta = [[0 for i in range(9)] for j in range(9)]
     a1 = 0
     a = 0.1
-    zeta = [[a1, a, 0, a, 0, 0, 0, 0, 0], 
+    zeta = [[[a1, a, 0, a, 0, 0, 0, 0, 0], 
            [a, a1, a, 0, a, 0, 0, 0, 0],
            [0, a, a1, 0, 0, a, 0, 0, 0],
            [a, 0, 0, a1, a, 0, a, 0, 0],
@@ -82,15 +88,15 @@ if __name__ == '__main__':
            [0, 0, a, 0, a, a1, 0, 0, a],
            [0, 0, 0, a, 0, 0, a1, a, 0],
            [0, 0, 0, 0, a, 0, a, a1, a],
-           [0, 0, 0, 0, 0, a, 0, a, a1]] 
-
+           [0, 0, 0, 0, 0, a, 0, a, a1]]] 
+ 
     #zeta[0][0] = 0.5
 
     """ Neighbours matrix"""
     nbg = [0, 1, 0, 1, 0, 0, 0, 0, 0]
 
     """ Test stuff here """
-    readings = [0,3,0,0,0,0,0,0,0]
+    readings = [6,3,0,0,0,0,0,0,0]
     numbees = estimate_numbees(readings)
 
     """ Adjacency matrix - used for debugging """  
@@ -110,7 +116,7 @@ if __name__ == '__main__':
 
     """ Fake data from neighbors """
     nbg_data = [[0,0,0,0,0,0,0,0,0,0],
-               [0.1,0.5,0.1,0,0.1,0,0,0,0],
+               [0.1,0,0.1,0,0.1,0,0,0,0],
                [0,0,0,0,0,0,0,0,0,0],
                [0,0,0,0,0,0,0,0,0,0],
                [0,0,0,0,0,0,0,0,0,0],
@@ -122,32 +128,34 @@ if __name__ == '__main__':
     """ Main loop """
     t = 0
     while t<Texp:
+        zeta.append([[0 for x in row] for row in zeta[-1]])        
         for index in range (n):    #for loop is used for debugging 
             """ Read zeta from neighbours and copy to zeta[ngb_id-1] """
             #zeta[i] = nbg_data[i]
             nbg = A[index]
-            numbees = readings[index]
+            numbees = readings[index] 
             casu_id = index+1
             """ Update zeta """
-            zeta = update(casu_id, zeta, nbg, numbees, Td)
+            zeta = update(casu_id, zeta, A, numbees, Td)
         
             
             """ Read temperature from neighbours - x(index) = [temp1, ..., temp9] """
             #x = read_nbg_temp
-            uref = compute_setpoint(casu_id, zeta, nbg, x)
+            #uref = compute_setpoint(casu_id, zeta, nbg, x)
 
             """ Reference filter """
-            x[index] += 0.1*Td*(uref - x[index])
+            #x[index] += 0.1*Td*(uref - x[index])
 
         t += Td     
 
   
     """ Debug print """
-    for row in zeta:
+    for row in zeta[-1]:
         row_formated = [ '%.3f' % elem for elem in row ]
         print (row_formated)
     
-    x_formated = [ '%.2f' % elem for elem in x ]
-    print(x_formated)
+    #x_formated = [ '%.2f' % elem for elem in x ]
+    #print('Temperature=')
+    #print(x_formated)
 
 
