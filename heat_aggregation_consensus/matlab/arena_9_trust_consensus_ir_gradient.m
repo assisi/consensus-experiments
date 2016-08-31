@@ -87,11 +87,11 @@ for step = 1:(nSteps-1)
         for j = 1:n
             dzeta1 = 0; dzeta2 = 0;
             for k = 1:n
-                dzeta1 = dzeta1 + A(i,k)*zeta(i,k,step)*(zeta(k,j,step)-zeta(i,j,step))
+                dzeta1 = dzeta1 + A(i,k)*zeta(i,k,step)*(zeta(k,j,step)-zeta(i,j,step));
                 %dzeta1 = dzeta1 + A(i,k)*(zeta(k,j,step)-zeta(i,j,step));
             end
             if i == j % Include sensors measurement                
-                dzeta2 = f(i)/6 - zeta(i,i,step)         
+                dzeta2 = f(i)/6 - zeta(i,i,step);         
             end
             zeta(i,j,step+1) = zeta(i,j,step) + Td*(dzeta1 + dzeta2);
         end

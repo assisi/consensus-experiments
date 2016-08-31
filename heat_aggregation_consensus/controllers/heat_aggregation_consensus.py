@@ -5,13 +5,49 @@ from assisipy import casu
 
 from threading import Thread, Event
 
+from copy import deepcopy
+
 class ConsensusAlgorithm:
 
-    def __init__(self, zeta):
+    def __init__(self, casu_id, zeta, A):
+
+        self.casu_id = casu_id
         self.zeta = zeta
-    
-    def update(self, nbg_data, numbees):
-        pass
+        self.A = A
+        self.temp_setpoints = [27 for x in A[0]]
+
+    def step(self, numbees, dt):
+        """ One step of the algorithm """
+        
+        # Create zeta for next step
+        self.zeta.append([[0 for x in row] for row in zeta[-1]])        
+        self.update_zeta(numbees, dt)
+        #self.update_setpoint()
+
+    def update_zeta(self, numbees, dt):
+        """
+        Update the zeta matrix, based on neighbors' data
+        and bee density estimate.
+        """
+        i = self.casu_id - 1
+        
+        for j in range (n):
+            
+            dzeta1 = 0
+            dzeta2 = 0
+            for k in range (n):
+                dzeta1 += self.A[i][k]*self.zeta[-2][i][k]*(self.zeta[-2][k][j]-self.zeta[-2][i][j])
+
+            """ Include IR detection"""
+            if i == j:                
+                dzeta2 = numbees/6.0 - self.zeta[-2][i][i]            
+
+            self.zeta[-1][i][j] = self.zeta[-2][i][j] + dt*(dzeta1 + dzeta2)
+
+    def print_zeta(self,k=-1):
+        for row in self.zeta[k]:
+            row_formated = [ '%.3f' % elem for elem in row ]
+            print (row_formated)
 
 class ConsensusController(Thread):
 
@@ -46,34 +82,7 @@ def estimate_numbees(readings):
 
     return numbees
 
-def update(casu_id, zeta, A, numbees, dt):
-    """
-    Update the zeta matrix, based on neighbors' data
-    and bee density estimate.
-    """
-    i = casu_id - 1
-    
-    for j in range (n):
-        
-        dzeta1 = 0
-        dzeta2 = 0
-        for k in range (n):
-            dzeta1 += A[i][k]*zeta[-2][i][k]*(zeta[-2][k][j]-zeta[-2][i][j])
-            #print("nbg(%d)=%d" %(k, nbg[k]))
-            #print("dzeta1(%d, %d)=%f" %(j, k, dzeta1))
-            #print('dzeta1={0}'.format(dzeta1))
-            #import ipdb; ipdb.set_trace()
-        
-        """ Include IR detection"""
-        if i == j:                
-            dzeta2 = numbees/6.0 - zeta[-2][i][i]
-            #print('dzeta2={0}'.format(dzeta2))
-            #print("dzeta2(%d)=%f" %(i, dzeta2))           
-        
-        
-        zeta[-1][i][j] = zeta[-2][i][j] + dt*(dzeta1 + dzeta2)
 
-    return zeta
 
 def compute_setpoint(casu_id, zeta, nbg, x):
     """
@@ -160,35 +169,33 @@ if __name__ == '__main__':
                [0,0,0,0,0,0,0,0,0,0],
                [0,0,0,0,0,0,0,0,0,0]]
     
+    consensuses = [ConsensusAlgorithm(i+1,deepcopy(zeta),deepcopy(A)) for i in range(n)]
+
     """ Main loop """
     t = 0
     while t<Texp:
-        zeta.append([[0 for x in row] for row in zeta[-1]])        
-        for index in range (n):    #for loop is used for debugging 
-            """ Read zeta from neighbours and copy to zeta[ngb_id-1] """
-            #zeta[i] = nbg_data[i]
-            nbg = A[index]
-            numbees = readings[index] 
-            casu_id = index+1
-            """ Update zeta """
-            zeta = update(casu_id, zeta, A, numbees, Td)
-        
-            
-            """ Read temperature from neighbours - x(index) = [temp1, ..., temp9] """
-            #x = read_nbg_temp
-            #uref = compute_setpoint(casu_id, zeta, nbg, x)
 
-            """ Reference filter """
-            #x[index] += 0.1*Td*(uref - x[index])
+        # Update one consensus step for each casu
+        for index in range (n):    #for loop is used for debugging
+            numbees = readings[index] 
+            consensuses[index].step(numbees,Td)
+            
+        # Exchange information between CASUs
+        for index in range(n):
+            for (k,nbg) in enumerate(A[index]):
+                if nbg:
+                    consensuses[index].zeta[-1][k] = deepcopy(consensuses[k].zeta[-1][k])
 
         t += Td     
 
   
     """ Debug print """
-    for row in zeta[-1]:
-        row_formated = [ '%.3f' % elem for elem in row ]
-        print (row_formated)
-    
+    """
+    for cons in enumerate(consensuses):
+        print('-------------------- Casu-00{0} --------------------'.format(k+1))
+        cons.print_zeta()
+    """
+
     #x_formated = [ '%.2f' % elem for elem in x ]
     #print('Temperature=')
     #print(x_formated)
