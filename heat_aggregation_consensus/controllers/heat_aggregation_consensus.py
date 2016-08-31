@@ -14,7 +14,7 @@ class ConsensusAlgorithm:
         self.casu_id = casu_id
         self.zeta = zeta
         self.A = A
-        self.temp_setpoints = [27 for x in A[0]]
+        self.t_ref = [0 for x in A[0]]
 
     def step(self, numbees, dt):
         """ One step of the algorithm """
@@ -22,7 +22,7 @@ class ConsensusAlgorithm:
         # Create zeta for next step
         self.zeta.append([[0 for x in row] for row in zeta[-1]])        
         self.update_zeta(numbees, dt)
-        #self.update_setpoint()
+        self.update_setpoint(dt)
 
     def update_zeta(self, numbees, dt):
         """
@@ -48,6 +48,34 @@ class ConsensusAlgorithm:
         for row in self.zeta[k]:
             row_formated = [ '%.3f' % elem for elem in row ]
             print (row_formated)
+
+    def update_setpoint(self,dt):
+        """
+        Compute temperature sensor setpoints
+        from zeta matrix.
+        """
+        i = self.casu_id - 1
+        t_ref_new = self.t_ref[i]
+        zeta_i_max = max(self.zeta[-2][i])   #zeta in step k
+        i_leader = 0
+        t_nbg_i_max = 0
+        for j in range (n):
+            #CASUi is a leader if its zeta is max
+            if (i==j) and (self.zeta[-2][i][j]==zeta_i_max):
+                t_ref_new = 36
+                i_leader = 1
+            elif (i_leader == 0) and (A[i][j] == 1) and (t_nbg_i_max < self.t_ref[j]):
+                t_nbg_i_max = self.t_ref[j]            
+                t_ref_new = t_nbg_i_max - 4
+    
+        """ Reference limits """
+        t_ref_new = sorted([26,t_ref_new,38])[1]
+
+        """ Reference filter """
+        self.t_ref[i] += 0.1*dt*(t_ref_new - self.t_ref[i])
+
+    def print_setpoints(self):
+        print(['%.2f' % t for t in self.t_ref])
 
 class ConsensusController(Thread):
 
@@ -82,46 +110,18 @@ def estimate_numbees(readings):
 
     return numbees
 
-
-
-def compute_setpoint(casu_id, zeta, nbg, x):
-    """
-    Compute temperature sensor setpoints
-    from zeta matrix.
-    """
-    i = casu_id - 1
-    zeta_i_max = max(zeta[i])
-    i_leader = 0
-    x_nbg_i_max = 0
-    for j in range (9):
-        if (i==j) and (zeta[i][j]==zeta_i_max):
-            setpoint = 36
-            i_leader = 1
-        elif (i_leader == 0) and (nbg[j] == 1) and (x_nbg_i_max < x[j]):
-            x_nbg_i_max = x[j]            
-            setpoint = x_nbg_i_max - 4
-
-    """ Reference limits """
-    if setpoint < 26:
-        setpoint = 26
-    if setpoint > 38:
-        setpoint = 38
-
-    return setpoint 
-
 if __name__ == '__main__':
 
     casu_id = 1
     """ Number of CASUs in the arena"""
     n = 9
     """ Discretization time in sec """
-    Td = .1
+    Td = 0.1
     """ Experiment time in sec """
     Texp = 100
     """ Initial temperature """
-    x = [27, 27, 27, 27, 27, 27, 27, 27, 27]
+
     """ Initial value for zeta """
-    #zeta = [[0 for i in range(9)] for j in range(9)]
     a1 = 0
     a = 0.1
     zeta = [[[a1, a, 0, a, 0, 0, 0, 0, 0], 
@@ -133,11 +133,6 @@ if __name__ == '__main__':
            [0, 0, 0, a, 0, 0, a1, a, 0],
            [0, 0, 0, 0, a, 0, a, a1, a],
            [0, 0, 0, 0, 0, a, 0, a, a1]]] 
- 
-    #zeta[0][0] = 0.5
-
-    """ Neighbours matrix"""
-    nbg = [0, 1, 0, 1, 0, 0, 0, 0, 0]
 
     """ Test stuff here """
     readings = [6,3,0,0,0,0,0,0,0]
@@ -154,20 +149,6 @@ if __name__ == '__main__':
         [0, 0, 0, 0, 1, 0, 1, 0, 1],
         [0, 0, 0, 0, 0, 1, 0, 1, 0]]
 
-    """ Debug print """
-    #print(numbees)
-    #print(readings[0])
-
-    """ Fake data from neighbors """
-    nbg_data = [[0,0,0,0,0,0,0,0,0,0],
-               [0.1,0,0.1,0,0.1,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0,0],
-               [0,0,0,0,0,0,0,0,0,0]]
     
     consensuses = [ConsensusAlgorithm(i+1,deepcopy(zeta),deepcopy(A)) for i in range(n)]
 
@@ -185,19 +166,7 @@ if __name__ == '__main__':
             for (k,nbg) in enumerate(A[index]):
                 if nbg:
                     consensuses[index].zeta[-1][k] = deepcopy(consensuses[k].zeta[-1][k])
+                    consensuses[index].t_ref[k] = deepcopy(consensuses[k].t_ref[k])
 
         t += Td     
-
-  
-    """ Debug print """
-    """
-    for cons in enumerate(consensuses):
-        print('-------------------- Casu-00{0} --------------------'.format(k+1))
-        cons.print_zeta()
-    """
-
-    #x_formated = [ '%.2f' % elem for elem in x ]
-    #print('Temperature=')
-    #print(x_formated)
-
 
