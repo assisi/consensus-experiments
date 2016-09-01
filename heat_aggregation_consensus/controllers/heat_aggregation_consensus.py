@@ -6,18 +6,20 @@ from consensus_algorithm import ConsensusAlgorithm
 from assisipy import casu
 
 import sys
+import time
 from threading import Thread, Event
+from datetime import datetime
 from copy import deepcopy
 import json
-import numpy as np
+import csv
 
 class ConsensusController(Thread):
 
-    def __init__(self, rtc_file, consensus):
+    def __init__(self, rtc_file, consensus, log=False):
         
         Thread.__init__(self)
 
-        self.casu = casu.Casu(rtc_file)
+        self.casu = casu.Casu(rtc_file,log=True)
         self.nbg_ids = [int(name[-3:]) for name in self.casu._Casu__neighbors]
         self.consensus = deepcopy(consensus)
 
@@ -39,6 +41,12 @@ class ConsensusController(Thread):
         self.ir_thresholds['casu-008'] = [11000, 10500, 14000, 13000, 13000, 11000]
         self.ir_thresholds['casu-009'] = [11000, 10000, 14000, 16000, 13500, 11500]
 
+        # Set up zeta logging
+        now_str = datetime.now().__str__().split('.')[0]
+        now_str = now_str.replace(' ','-').replace(':','-')
+        self.logfile = open(now_str + '-' + self.casu.name() + '-zeta.csv','wb')
+        self.logger = csv.writer(self.logfile, delimiter=';')
+        
     def update(self):
 
         casu_id = self.consensus.casu_id
@@ -80,6 +88,9 @@ class ConsensusController(Thread):
                     self.consensus.zeta[-1][int(casu_sender[-3:]) -1] = deepcopy(rec_nbg_zeta)
                     self.consensus.t_ref[int(casu_sender[-3:])-1] = rec_nbg_temp     
 
+        # Log zeta
+        self.logger.writerow([time.time()] + [z for row in self.consensus.zeta[-1] for z in row])
+        
         print(self.casu.name(),['%.3f' % z for z in self.consensus.zeta[-1][self.consensus.casu_id-1]], 'T_ref', self.consensus.t_ref)
     
 
@@ -148,7 +159,7 @@ if __name__ == '__main__':
 #         [0,1,1,0]]
 
     ca = ConsensusAlgorithm(casu_id,zeta,A)
-    ctrl = ConsensusController(rtc, ca)
+    ctrl = ConsensusController(rtc, ca, log=True)
     ctrl.run()
 
     
