@@ -30,34 +30,4 @@ beearena :
         prefix : deploy/consensus
         controller: controllers/heat_aggregation_consensus.py
         extra : [controllers/consensus_algorithm.py]
-    casu-005 : 
-        hostname : bbg-002
-        user : assisi
-        prefix : deploy/consensus
-        controller: controllers/heat_aggregation_consensus.py
-        extra : [controllers/consensus_algorithm.py]
-    casu-006 : 
-        hostname : bbg-002
-        user : assisi
-        prefix : deploy/consensus
-        controller: controllers/heat_aggregation_consensus.py
-        extra : [controllers/consensus_algorithm.py]
-    casu-007 : 
-        hostname : bbg-002
-        user : assisi
-        prefix : deploy/consensus
-        controller: controllers/heat_aggregation_consensus.py
-        extra : [controllers/consensus_algorithm.py]
-    casu-008 : 
-        hostname : bbg-002
-        user : assisi
-        prefix : deploy/consensus
-        controller: controllers/heat_aggregation_consensus.py
-        extra : [controllers/consensus_algorithm.py]
-    casu-009 : 
-        hostname : bbg-003
-        user : assisi
-        prefix : deploy/consensus
-        controller: controllers/heat_aggregation_consensus.py
-        extra : [controllers/consensus_algorithm.py]
-                
+

@@ -24,4 +24,6 @@ digraph arena_3x3 {
         "casu-008" -> "casu-009" [ label = "casu-009" ]
         "casu-009" -> "casu-006" [ label = "casu-006" ]
         "casu-009" -> "casu-008" [ label = "casu-008" ]
+    }
 }
+

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: -*-
+# -*- coding: utf-8 -*-
 
 import sys
 import time
@@ -14,5 +14,5 @@ if __name__ == '__main__':
     c = casu.Casu(sys.argv[1],log=True)
 
     while True:
-        sleep(10)
+        time.sleep(10)
     
