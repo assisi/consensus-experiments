@@ -11,7 +11,7 @@ class ConsensusAlgorithm:
         self.zeta = zeta
         self.A = A
         self.n = len(A[casu_id-1]) # Total number of CASUs; should actually be obsolete
-        self.t_ref = [0 for x in A[0]]
+        self.t_ref = [27 for x in A[0]]
 
     def step(self, numbees, dt):
         """ One step of the algorithm """
