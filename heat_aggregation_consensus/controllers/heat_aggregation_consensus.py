@@ -20,19 +20,38 @@ class ConsensusController(Thread):
         self.casu = casu.Casu(rtc_file)
         self.nbg_ids = [int(name[-3:]) for name in self.casu._Casu__neighbors]
         self.consensus = deepcopy(consensus)
-        self.Td = 1 # Sample time is 1 second
+
+        self.Td = 1 # Sample time for consensus is 1 second
         
         self.stop_flag = Event()
 
+        # Bee density estimation variables
+        self.numbees = [0]
+        self.nb_buf_len = 5
+        self.ir_thresholds = {}
+        self.ir_thresholds['casu-001'] = [1,1,1,1,1,1]
+        self.ir_thresholds['casu-002'] = [1,1,1,1,1,1]
+        self.ir_thresholds['casu-003'] = [1,1,1,1,1,1]
+        self.ir_thresholds['casu-004'] = [1,1,1,1,1,1]
+        self.ir_thresholds['casu-005'] = [1,1,1,1,1,1]
+        self.ir_thresholds['casu-006'] = [1,1,1,1,1,1]
+        self.ir_thresholds['casu-007'] = [1,1,1,1,1,1]
+        self.ir_thresholds['casu-008'] = [1,1,1,1,1,1]
+        self.ir_thresholds['casu-009'] = [1,1,1,1,1,1]
+
     def update(self):
-        
-        np.set_printoptions(precision=3)    
-        # Hack for testing
-        numbees = [6,3,0,0,0,0,0,0,0]
+
         casu_id = self.consensus.casu_id
 
+        np.set_printoptions(precision=3)    
+        # Hack for testing
+        #numbees_fake = [6,3,0,0,0,0,0,0,0]
+        self.update_numbees_estimate()
+        numbees = sum(self.numbees)/float(len(self.numbees))
+        print(self.casu.name(),numbees)
+
         # Compute one step of the algorithm
-        self.consensus.step(numbees[casu_id],1)
+        self.consensus.step(numbees,1)
 
         # Communicate with neighbors
         for nbg in self.casu._Casu__neighbors:
@@ -77,13 +96,15 @@ class ConsensusController(Thread):
         self.casu.temp_standby()
         print('Turned off heater, exiting...')
 
-    def estimate_numbees(readings):
+    def update_numbees_estimate(self):
         """
         Bee density estimator.
         """
-        numbees = 0
-    
-        return numbees
+        self.numbees.append(sum([x>t for (x,t) in zip(self.casu.get_ir_raw_readings(casu.ARRAY),
+                                                      self.ir_thresholds[self.casu.name()])]))
+        if len(self.numbees) > self.nb_buf_len:
+            self.numbees.pop(0)
+
 
 if __name__ == '__main__':
 
