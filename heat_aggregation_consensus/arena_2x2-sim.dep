@@ -1,0 +1,32 @@
+# Deployment specification file
+# For each casu in the arena, we need to specifiy:
+#     - the hostname of the target machine
+#     - the controller and additional files to deploy
+
+beearena : 
+    casu-001 : 
+        hostname : localhost
+        user : assisi
+        prefix : deploy
+        controller: controllers/heat_aggregation_consensus.py
+        # The brackets around additional files are necessary,
+        # because the deployment tool expects a list!
+        extra : [controllers/consensus_algorithm.py]
+    casu-002 : 
+        hostname : localhost
+        user : assisi
+        prefix : deploy
+        controller: controllers/heat_aggregation_consensus.py
+        extra : [controllers/consensus_algorithm.py]
+    casu-003 : 
+        hostname : localhost
+        user : assisi
+        prefix : deploy
+        controller: controllers/heat_aggregation_consensus.py
+        extra : [controllers/consensus_algorithm.py]
+    casu-004 : 
+        hostname : localhost
+        user : assisi
+        prefix : deploy
+        controller: controllers/heat_aggregation_consensus.py
+        extra : [controllers/consensus_algorithm.py]

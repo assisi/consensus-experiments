@@ -1,0 +1,10 @@
+# This file describes a deployment project
+
+# Arena description file
+arena : arena_2x2-sim.arena
+
+# Neighborhood graph
+nbg : arena_2x2.nbg
+
+# Deployment specification
+dep : arena_2x2-sim.dep
