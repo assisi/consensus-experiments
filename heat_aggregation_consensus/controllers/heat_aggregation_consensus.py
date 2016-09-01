@@ -32,7 +32,7 @@ class ConsensusController(Thread):
         casu_id = self.consensus.casu_id
 
         # Compute one step of the algorithm
-        self.consensus.step(numbees[casu_id],1)
+        self.consensus.step(numbees[casu_id-1],0.1)
 
         # Communicate with neighbors
         for nbg in self.casu._Casu__neighbors:
@@ -60,11 +60,16 @@ class ConsensusController(Thread):
                     self.consensus.t_ref[int(casu_sender[-3:])-1] = rec_nbg_temp     
                     
                     #print('NEW',self.casu.name(), nbg, self.consensus.t_ref) 
-                    #print(self.casu.name(), nbg, int(casu_sender[-3:]), np.array(rec_nbg_zeta), np.array(self.consensus.zeta[-1]))
+                    
+#                    if (self.casu.name() == 'casu-001'):
+#                        print(self.casu.name(), nbg, int(casu_sender[-3:]), np.array(rec_nbg_zeta), np.array(self.consensus.zeta[-1]))
 
 #['%.3f' % z for z in self.consensus.zeta[-1][nbg-1]])
-        
-        print(self.casu.name(), np.array(self.consensus.zeta[-1]), 'T_ref', self.consensus.t_ref)
+#        if (self.casu.name() == 'casu-001') or (self.casu.name() == 'casu-002') or (self.casu.name() == 'casu-004'):
+#        #if (self.casu.name() == 'casu-001'):
+#            print(self.casu.name(), np.array(self.consensus.zeta[-1]), 'T_ref', self.consensus.t_ref)
+
+        print(self.casu.name(),['%.3f' % z for z in self.consensus.zeta[-1][self.consensus.casu_id-1]], 'T_ref', self.consensus.t_ref)
     
 
 
@@ -108,10 +113,10 @@ if __name__ == '__main__':
            [0, 0, 0, 0, a, 0, a, a1, a],
            [0, 0, 0, 0, 0, a, 0, a, a1]]] 
 
-    zeta = [[[0,0.1,0.1,0],
-             [0.1,0,0,0.1],
-             [0.1,0,0,0.1],
-             [0,0.1,0.1,0]]]
+#    zeta = [[[0,0.1,0.1,0],
+#             [0.1,0,0,0.1],
+#             [0.1,0,0,0.1],
+#             [0,0.1,0.1,0]]]
 
     # Adjecency matrix
     A = [[0, 1, 0, 1, 0, 0, 0, 0, 0], 
@@ -124,10 +129,10 @@ if __name__ == '__main__':
         [0, 0, 0, 0, 1, 0, 1, 0, 1],
         [0, 0, 0, 0, 0, 1, 0, 1, 0]]
 
-    A = [[0,1,1,0],
-         [1,0,0,1],
-         [1,0,0,1],
-         [0,1,1,0]]
+#    A = [[0,1,1,0],
+#         [1,0,0,1],
+#         [1,0,0,1],
+#         [0,1,1,0]]
 
     ca = ConsensusAlgorithm(casu_id,zeta,A)
     ctrl = ConsensusController(rtc, ca)
