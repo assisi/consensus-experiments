@@ -33,13 +33,14 @@ class ConsensusAlgorithm:
             dzeta1 = 0
             dzeta2 = 0
             for k in range (self.n):
-                dzeta1 += self.A[i][k]*self.zeta[-2][i][k]*(self.zeta[-2][k][j]-self.zeta[-2][i][j])
+                #dzeta1 += self.A[i][k]*self.zeta[-2][i][k]*(self.zeta[-2][k][j]-self.zeta[-2][i][j])
+                dzeta1 += self.A[i][k]*(self.zeta[-2][k][j]-self.zeta[-2][i][j])
 
             """ Include IR detection"""
             if i == j:                
                 dzeta2 = numbees/6.0 - self.zeta[-2][i][i]            
 
-            self.zeta[-1][i][j] = self.zeta[-2][i][j] + dt*(dzeta1 + dzeta2)
+            self.zeta[-1][i][j] = self.zeta[-2][i][j] + 0.1*(dzeta1 + dzeta2)
 
     def print_zeta(self,k=-1):
         for row in self.zeta[k]:
@@ -69,8 +70,8 @@ class ConsensusAlgorithm:
         t_ref_new = sorted([26,t_ref_new,38])[1]
 
         """ Reference filter """
-        self.t_ref[i] = t_ref_new
-        #self.t_ref[i] += 0.1*dt*(t_ref_new - self.t_ref[i])
+        #self.t_ref[i] = t_ref_new
+        self.t_ref[i] += dt*(t_ref_new - self.t_ref[i])
 
     def print_setpoints(self):
         print(['%.2f' % t for t in self.t_ref])
