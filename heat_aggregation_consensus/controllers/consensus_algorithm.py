@@ -17,7 +17,9 @@ class ConsensusAlgorithm:
         """ One step of the algorithm """
         
         # Create zeta for next step
-        self.zeta.append([[0 for x in row] for row in self.zeta[-1]])        
+        self.zeta.append(deepcopy(self.zeta[-1]))
+        #self.zeta.append([[x for x in row] for row in self.zeta[-1]])
+        #self.zeta.append([[0 for x in row] for row in self.zeta[-1]])        
         self.update_zeta(numbees, dt)
         self.update_setpoint(dt)
 
