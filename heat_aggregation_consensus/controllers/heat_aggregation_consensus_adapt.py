@@ -27,7 +27,8 @@ class ConsensusController(Thread):
         self.consensus = deepcopy(consensus)
 
         self.Td = 0.25 # Sample time for consensus is 1 second
-        self.t_prev = time.time()
+        #self.t_prev = time.time()
+        self.t_prev = 0
         self.stop_flag = Event()
 
         # Bee density estimation variables
@@ -51,22 +52,30 @@ class ConsensusController(Thread):
         self.logger = csv.writer(self.logfile, delimiter=';')
         
     def update(self):
-        t_old = self.t_prev
-        self.t_prev = time.time()
-        #print(self.casu.name(),self.t_prev - t_old)
         
         casu_id = self.consensus.casu_id
- 
+        
         # Hack for testing
-        numbees_fake = [0,3,0,0,0,0,0,0,6]
+        numbees_fake = [0,3,0,0,0,0,0,0,0]
         self.update_numbees_estimate()
         numbees = sum(self.numbees)/float(len(self.numbees))
         numbees = numbees_fake[casu_id-1]
         #print(self.casu.name(),numbees)
-
+        
+        
         # Compute one step of the algorithm
         self.consensus.step(numbees,0.1)
-
+        
+        """
+        #Testing the algorithm when on node updates it algorithm slower
+        if (casu_id is 5) and (self.t_prev > 1):
+            self.consensus.step(numbees,0.1)
+            self.t_prev = 0
+        else:
+            self.consensus.step(numbees,0.1)
+            self.t_prev += 1
+        """     
+        
         # Set temperature reference
         self.casu.set_temp(self.consensus.t_ref[casu_id-1])
 
@@ -77,32 +86,22 @@ class ConsensusController(Thread):
 
         # Update data buffer with messages from all neighbors
         # We wait here until we have at least one message from every neighbor
-        updated_all = False
-        while not updated_all:
-            msg = self.casu.read_message()
-            if msg:
-                nbg_id = int(msg['sender'][-3:])
-                self.nbg_data_buffer[nbg_id].append(msg['data'])
-            # Check if we now have at least one message from each neighbor
-            updated_all = True
-            for nbg in self.nbg_data_buffer:
-                if not self.nbg_data_buffer[nbg]:
-                    updated_all = False
-                    
-                
-        # We got at least one message from every neighbor
-        # We can now update our zeta
-        for nbg_id in self.nbg_data_buffer:
-            #print(self.casu.name(), nbg, ['%.3f' % z for z in self.consensus.zeta[-1][nbg-1]])                
-            #print(self.casu.name(), nbg, self.consensus.t_ref)     
+        msg = self.casu.read_message()
+        while msg:
+            nbg_id = int(msg['sender'][-3:])
+            self.nbg_data_buffer[nbg_id].append(msg['data'])            
+            
+            #if self.casu.name() == 'casu-001':
+            #    print(nbg_id, self.nbg_data_buffer[nbg_id])
+                   
             data = self.nbg_data_buffer[nbg_id].pop(0).split(';')
             rec_nbg_zeta = json.loads(data[0])
             rec_nbg_temp = float(data[1])
             self.consensus.zeta[-1][nbg_id -1] = deepcopy(rec_nbg_zeta)
-            self.consensus.t_ref[nbg_id-1] = rec_nbg_temp
-#            if self.casu.name() == 'casu-006':
-#                print('zeta c6', casu_sender, ['%.3f' % z for z in self.consensus.zeta[-1][int(casu_sender[-3:])-1]])
-
+            self.consensus.t_ref[nbg_id-1] = rec_nbg_temp  
+            msg = self.casu.read_message()
+                    
+                    
         # Log zeta
         self.logger.writerow([time.time()] + [z for row in self.consensus.zeta[-1] for z in row])
         
@@ -169,11 +168,7 @@ if __name__ == '__main__':
         [0, 0, 0, 1, 0, 0, 0, 1, 0],
         [0, 0, 0, 0, 1, 0, 1, 0, 1],
         [0, 0, 0, 0, 0, 1, 0, 1, 0]]
-
-#    A = [[0,1,1,0],
-#         [1,0,0,1],
-#         [1,0,0,1],
-#         [0,1,1,0]]
+        
 
     ca = ConsensusAlgorithm(casu_id,zeta,A)
     ctrl = ConsensusController(rtc, ca, log=True)
