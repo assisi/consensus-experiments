@@ -21,7 +21,7 @@ class ConsensusAlgorithm:
         #self.zeta.append([[x for x in row] for row in self.zeta[-1]])
         #self.zeta.append([[0 for x in row] for row in self.zeta[-1]])        
         self.update_zeta(numbees, dt)
-        self.update_setpoint(dt)
+        self.update_setpoint(numbees, dt)
 
     def update_zeta(self, numbees, dt):
         """
@@ -49,7 +49,7 @@ class ConsensusAlgorithm:
             row_formated = [ '%.3f' % elem for elem in row ]
             print (row_formated)
 
-    def update_setpoint(self,dt):
+    def update_setpoint(self, numbees, dt):
         """
         Compute temperature sensor setpoints
         from zeta matrix.
@@ -62,7 +62,10 @@ class ConsensusAlgorithm:
         for j in range (self.n):
             #CASUi is a leader if its zeta is max
             if (i==j) and (self.zeta[-2][i][j]==zeta_i_max):
-                t_ref_new = 36
+                if numbees > 0.5:
+                    t_ref_new = 36
+                else:
+                    t_ref_new = 26
                 i_leader = 1
             elif (i_leader == 0) and (self.A[i][j] == 1) and (t_nbg_i_max < self.t_ref[j]):
                 t_nbg_i_max = self.t_ref[j]            
