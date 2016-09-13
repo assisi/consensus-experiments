@@ -33,22 +33,31 @@ class ConsensusController(Thread):
         # Bee density estimation variables
         self.numbees = [0]
         self.nb_buf_len = 5
-        self.ir_thresholds = {}
-        self.ir_thresholds['casu-001'] = [13500, 11500, 11500, 11500, 10500, 9500]
-        self.ir_thresholds['casu-002'] = [12000, 10000, 14500, 13000, 10500, 11500]
-        self.ir_thresholds['casu-003'] = [8000, 19500, 20000, 15500, 14000, 12500]
-        self.ir_thresholds['casu-004'] = [12500, 17000, 20000, 20000, 20000, 13500]
-        self.ir_thresholds['casu-005'] = [16000, 12500, 14000, 25000, 18000, 15500]
-        self.ir_thresholds['casu-006'] = [18000, 12000, 18500, 14000, 12000, 12500]
-        self.ir_thresholds['casu-007'] = [11500, 11500, 17500, 12500, 14500, 13500]
-        self.ir_thresholds['casu-008'] = [14500, 12500, 16500, 14000, 15000, 13000]
-        self.ir_thresholds['casu-009'] = [12000, 24000, 14500, 16500, 14200, 12000]
+        self.ir_thresholds = [25000, 25000, 25000, 25000, 25000, 25000]
 
         # Set up zeta logging
         now_str = datetime.now().__str__().split('.')[0]
         now_str = now_str.replace(' ','-').replace(':','-')
         self.logfile = open(now_str + '-' + self.casu.name() + '-zeta.csv','wb')
         self.logger = csv.writer(self.logfile, delimiter=';')
+
+    def calibrate_ir_thresholds(self, margin = 500, duration = 5):
+
+        self.casu.set_diagnostic_led_rgb(r=1)    
+        
+        t_start = time.time()
+        count = 0
+        ir_raw_buffers = [[0],[0],[0],[0],[0],[0]]
+        while time.time() - t_start < duration:
+            ir_raw = self.casu.get_ir_raw_value(casu.ARRAY)
+            for val,buff in zip(ir_raw,ir_raw_buffers):
+                buff.append(val)
+            time.sleep(0.1)
+            
+        self.ir_thresholds = [max(buff)+margin for buff in ir_raw_buffers]
+        print(self.casu.name(), self.ir_thresholds)
+        
+        self.casu.diagnostic_led_standby()
         
     def update(self):
         t_old = self.t_prev
@@ -124,7 +133,7 @@ class ConsensusController(Thread):
         Bee density estimator.
         """
         self.numbees.append(sum([x>t for (x,t) in zip(self.casu.get_ir_raw_value(casu.ARRAY),
-                                                      self.ir_thresholds[self.casu.name()])]))
+                                                      self.ir_thresholds)]))
         if len(self.numbees) > self.nb_buf_len:
             self.numbees.pop(0)
 
@@ -176,7 +185,8 @@ if __name__ == '__main__':
 
     ca = ConsensusAlgorithm(casu_id,zeta,A)
     ctrl = ConsensusController(rtc, ca, log=True)
-    ctrl.run()
+    ctrl.calibrate_ir_thresholds()
+    #ctrl.run()
 
     
     
