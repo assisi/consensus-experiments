@@ -65,7 +65,7 @@ class ConsensusController(Thread):
         casu_id = self.consensus.casu_id
         
         # Hack for testing
-        #numbees_fake = [0,3,0,0,0,0,0,0,0]
+        #numbees_fake = [0,0,0,0,6,2,5,0,0]
         self.update_numbees_estimate()
         numbees = sum(self.numbees)/float(len(self.numbees))
         #numbees = numbees_fake[casu_id-1]
@@ -75,9 +75,13 @@ class ConsensusController(Thread):
         # Compute one step of the algorithm
         self.consensus.step(numbees,0.1)
         
+        
         for nbg_id in self.nbg_data_buffer:
             self.consensus.zeta[-1][nbg_id-1] = [x*0.995 for x in self.consensus.zeta[-1][nbg_id-1]]
+            self.consensus.zeta[-1][casu_id-1][nbg_id-1] *=0.995
+            self.consensus.A[casu_id-1][nbg_id-1] *= 0.9
             self.consensus.t_ref[nbg_id-1] *= 0.995
+        
             
         """
         #Testing the algorithm when on node updates it algorithm slower
@@ -112,7 +116,16 @@ class ConsensusController(Thread):
             rec_nbg_temp = float(data[1])
             self.consensus.zeta[-1][nbg_id -1] = deepcopy(rec_nbg_zeta)
             self.consensus.t_ref[nbg_id-1] = rec_nbg_temp  
+            self.consensus.A[casu_id-1][nbg_id-1] = 1            
             msg = self.casu.read_message()
+            
+        """
+        for nbg_id in self.nbg_data_buffer:
+            if not self.nbg_data_buffer[nbg_id]:
+                self.consensus.zeta[-1][nbg_id-1] = [x*0.995 for x in self.consensus.zeta[-1][nbg_id-1]]
+                self.consensus.zeta[-1][casu_id-1][nbg_id-1] *=0.995
+                self.consensus.A[casu_id-1][nbg_id-1] *= 0.9
+        """
                     
                     
         # Log zeta
